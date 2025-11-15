@@ -37,6 +37,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if ($stmt->execute()) {
             $stmt->close();
+            // Log activity
+            logActivity('create', 'crops', "Added new crop: $crop_name ($crop_type)");
             setFlashMessage("Crop added successfully!", 'success');
             redirect('index.php');
         } else {

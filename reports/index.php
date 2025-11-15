@@ -14,14 +14,26 @@ $date_to = sanitizeInput($_GET['date_to'] ?? '');
     <h2>Reports & Analytics</h2>
 </div>
 
+<!-- Advanced Reports Section -->
 <div class="report-selector">
-    <h3>Select Report Type</h3>
+    <h3>📊 Advanced Reports</h3>
     <div class="report-buttons">
-        <a href="?type=crops" class="btn <?php echo $reportType === 'crops' ? 'btn-primary' : 'btn-outline'; ?>">📊 Crops Report</a>
-        <a href="?type=livestock" class="btn <?php echo $reportType === 'livestock' ? 'btn-primary' : 'btn-outline'; ?>">🐄 Livestock Report</a>
+        <a href="crop_reports.php" class="btn btn-primary">🌾 Crop Reports</a>
+        <a href="livestock_reports.php" class="btn btn-primary">🐄 Livestock Reports</a>
+        <a href="finance_reports.php" class="btn btn-primary">💰 Finance Reports</a>
+    </div>
+    <p style="margin-top: 10px; color: #666;">Comprehensive reports with production, sales, health tracking, and financial analysis</p>
+</div>
+
+<!-- Basic Reports Section -->
+<div class="report-selector" style="margin-top: 30px;">
+    <h3>📋 Basic Reports</h3>
+    <div class="report-buttons">
+        <a href="?type=crops" class="btn <?php echo $reportType === 'crops' ? 'btn-primary' : 'btn-outline'; ?>">📊 Crops Summary</a>
+        <a href="?type=livestock" class="btn <?php echo $reportType === 'livestock' ? 'btn-primary' : 'btn-outline'; ?>">🐄 Livestock Summary</a>
         <a href="?type=equipment" class="btn <?php echo $reportType === 'equipment' ? 'btn-primary' : 'btn-outline'; ?>">🔧 Equipment Report</a>
         <a href="?type=employees" class="btn <?php echo $reportType === 'employees' ? 'btn-primary' : 'btn-outline'; ?>">👥 Employee Report</a>
-        <a href="?type=expenses" class="btn <?php echo $reportType === 'expenses' ? 'btn-primary' : 'btn-outline'; ?>">💰 Expense Report</a>
+        <a href="?type=expenses" class="btn <?php echo $reportType === 'expenses' ? 'btn-primary' : 'btn-outline'; ?>">💸 Expense Summary</a>
         <a href="?type=inventory" class="btn <?php echo $reportType === 'inventory' ? 'btn-primary' : 'btn-outline'; ?>">📦 Inventory Report</a>
     </div>
 </div>

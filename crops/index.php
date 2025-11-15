@@ -118,6 +118,7 @@ $result = $stmt->get_result();
                 <td><span class="badge badge-<?php echo $row['status']; ?>"><?php echo ucfirst($row['status']); ?></span></td>
                 <?php if (canModify()): ?>
                 <td class="actions">
+                    <a href="record_sale.php?crop_id=<?php echo $row['id']; ?>" class="btn btn-sm btn-success">💰 Record Sale</a>
                     <a href="edit.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-edit">Edit</a>
                     <a href="delete.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-delete" onclick="return confirm('Are you sure you want to delete this crop?');">Delete</a>
                 </td>

@@ -4,13 +4,8 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../includes/functions.php';
 require_once __DIR__ . '/session.php';
 
-// Check if any users exist, if not redirect to registration
+// Get database connection
 $conn = getDBConnection();
-$result = $conn->query("SELECT COUNT(*) as count FROM users");
-$userCount = $result->fetch_assoc()['count'];
-if ($userCount == 0) {
-    redirect('register.php');
-}
 
 // Redirect if already logged in
 if (isLoggedIn()) {
@@ -37,6 +32,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $user = authenticateUser($username, $password);
         
         if ($user) {
+            // Update last login time
+            $updateStmt = $conn->prepare("UPDATE users SET last_login = NOW() WHERE id = ?");
+            $updateStmt->bind_param("i", $user['id']);
+            $updateStmt->execute();
+            $updateStmt->close();
+            
             createSession($user['id'], $user['username'], $user['role']);
             setFlashMessage("Welcome back, " . $user['username'] . "!", 'success');
             redirect('../dashboard/index.php');

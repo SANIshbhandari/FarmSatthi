@@ -1,0 +1,280 @@
+╔═══════════════════════════════════════════════════════════════════════════════════════════╗
+║                        FARMSAATHI DATABASE STRUCTURE                                      ║
+║                              16 Tables - 7 Modules                                        ║
+╚═══════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              1. USER MANAGEMENT MODULE                                   │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────────┐
+    │     USERS        │
+    ├──────────────────┤
+    │ • id (PK)        │
+    │ • username (UK)  │
+    │ • password       │
+    │ • email (UK)     │
+    │ • role           │
+    │ • last_login     │
+    │ • created_at     │
+    └──────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              2. CROP MANAGEMENT MODULE                                   │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+                            ┌─────────────────────┐
+                            │      CROPS          │
+                            ├─────────────────────┤
+                            │ • id (PK)           │
+                            │ • crop_name         │
+                            │ • crop_type         │
+                            │ • planting_date     │
+                            │ • expected_harvest  │
+                            │ • field_location    │
+                            │ • area_hectares     │
+                            │ • status            │
+                            │ • notes             │
+                            └──────────┬──────────┘
+                                       │
+                    ┌──────────────────┼──────────────────┬──────────────────┐
+                    │                  │                  │                  │
+                    ▼                  ▼                  ▼                  ▼
+        ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+        │  CROP_SALES      │  │ CROP_PRODUCTION  │  │ CROP_GROWTH_     │  │                  │
+        ├──────────────────┤  ├──────────────────┤  │   MONITORING     │  │                  │
+        │ • id (PK)        │  │ • id (PK)        │  ├──────────────────┤  │                  │
+        │ • crop_id (FK)   │  │ • crop_id (FK)   │  │ • id (PK)        │  │                  │
+        │ • crop_name      │  │ • expected_yield │  │ • crop_id (FK)   │  │                  │
+        │ • quantity_sold  │  │ • actual_yield   │  │ • monitoring_date│  │                  │
+        │ • rate_per_unit  │  │ • yield_unit     │  │ • growth_stage   │  │                  │
+        │ • total_price    │  │ • production_cost│  │ • watering_freq  │  │                  │
+        │ • buyer_name     │  │ • profit         │  │ • fertilizer_used│  │                  │
+        │ • buyer_contact  │  │ • harvest_date   │  │ • pesticide_used │  │                  │
+        │ • sale_date      │  │ • notes          │  │ • disease_notes  │  │                  │
+        └────────┬─────────┘  └──────────────────┘  │ • health_status  │  │                  │
+                 │                                   └──────────────────┘  │                  │
+                 │                                                         │                  │
+                 │                                                         │                  │
+                 └─────────────────────────────────────────────────────────┘                  │
+                                                   │                                          │
+                                                   ▼                                          │
+                                        ┌──────────────────┐                                 │
+                                        │     INCOME       │◄────────────────────────────────┘
+                                        ├──────────────────┤
+                                        │ • id (PK)        │
+                                        │ • source         │
+                                        │ • reference_id   │
+                                        │ • amount         │
+                                        │ • income_date    │
+                                        │ • description    │
+                                        │ • payment_method │
+                                        └──────────────────┘
+                                                   ▲
+                                                   │
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                           3. LIVESTOCK MANAGEMENT MODULE                                 │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+                            ┌─────────────────────┐
+                            │    LIVESTOCK        │
+                            ├─────────────────────┤
+                            │ • id (PK)           │
+                            │ • animal_type       │
+                            │ • breed             │
+                            │ • count             │
+                            │ • age_months        │
+                            │ • health_status     │
+                            │ • purchase_date     │
+                            │ • current_value     │
+                            │ • notes             │
+                            └──────────┬──────────┘
+                                       │
+            ┌──────────────────────────┼──────────────────────────┬──────────────────┐
+            │                          │                          │                  │
+            ▼                          ▼                          ▼                  ▼
+┌──────────────────────┐  ┌──────────────────────┐  ┌──────────────────────┐  ┌──────────────────────┐
+│ LIVESTOCK_HEALTH     │  │ LIVESTOCK_PRODUCTION │  │ LIVESTOCK_MORTALITY  │  │ LIVESTOCK_SALES      │
+├──────────────────────┤  ├──────────────────────┤  ├──────────────────────┤  ├──────────────────────┤
+│ • id (PK)            │  │ • id (PK)            │  │ • id (PK)            │  │ • id (PK)            │
+│ • livestock_id (FK)  │  │ • livestock_id (FK)  │  │ • livestock_id (FK)  │  │ • livestock_id (FK)  │
+│ • animal_id          │  │ • animal_id          │  │ • animal_id          │  │ • animal_type        │
+│ • breed              │  │ • production_date    │  │ • animal_type        │  │ • breed              │
+│ • age_months         │  │ • milk_production    │  │ • death_date         │  │ • quantity           │
+│ • weight_kg          │  │ • egg_production     │  │ • cause              │  │ • selling_price      │
+│ • vaccination_date   │  │ • meat_production    │  │ • age_at_death       │  │ • purchase_cost      │
+│ • vaccination_type   │  │ • feed_consumption   │  └──────────────────────┘  │ • profit_loss        │
+│ • disease_history    │  │ • production_unit    │                            │ • buyer_name         │
+│ • medication         │  │ • notes              │                            │ • buyer_contact      │
+│ • checkup_date       │  └──────────────────────┘                            │ • sale_date          │
+│ • veterinarian_name  │                                                       │ • notes              │
+│ • next_checkup_date  │                                                       └──────────┬───────────┘
+└──────────────────────┘                                                                  │
+                                                                                          │
+                                                                                          └──────────┐
+                                                                                                     │
+┌─────────────────────────────────────────────────────────────────────────────────────────┐        │
+│                              4. FINANCIAL MODULE                                         │        │
+└─────────────────────────────────────────────────────────────────────────────────────────┘        │
+                                                                                                     │
+                    ┌──────────────────┐                  ┌──────────────────┐                     │
+                    │     INCOME       │◄─────────────────┤  (from above)    │◄────────────────────┘
+                    ├──────────────────┤                  └──────────────────┘
+                    │ • id (PK)        │
+                    │ • source         │         Sources: crop_sales, livestock_sales, miscellaneous
+                    │ • reference_id   │
+                    │ • amount         │
+                    │ • income_date    │
+                    │ • description    │
+                    │ • payment_method │
+                    └──────────────────┘
+
+                    ┌──────────────────┐
+                    │    EXPENSES      │
+                    ├──────────────────┤
+                    │ • id (PK)        │
+                    │ • category       │         Categories: Feed, Fuel, Seeds, Fertilizer,
+                    │ • amount         │                     Labor, Veterinary, Maintenance,
+                    │ • expense_date   │                     Utilities, Pesticides, Insurance
+                    │ • description    │
+                    │ • payment_method │
+                    └──────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              5. INVENTORY MODULE                                         │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌─────────────────────┐
+                    │    INVENTORY        │
+                    ├─────────────────────┤
+                    │ • id (PK)           │
+                    │ • item_name         │
+                    │ • category          │
+                    │ • quantity          │
+                    │ • unit              │
+                    │ • reorder_level     │
+                    │ • last_updated      │
+                    └──────────┬──────────┘
+                               │
+                               │ 1:N
+                               │
+                               ▼
+                    ┌─────────────────────────┐
+                    │ INVENTORY_TRANSACTIONS  │
+                    ├─────────────────────────┤
+                    │ • id (PK)               │
+                    │ • inventory_id (FK)     │
+                    │ • transaction_type      │  Types: in, out
+                    │ • quantity              │
+                    │ • purpose               │
+                    │ • related_module        │  Modules: crops, livestock, equipment, other
+                    │ • transaction_date      │
+                    │ • notes                 │
+                    └─────────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              6. EQUIPMENT MODULE                                         │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌─────────────────────┐
+                    │    EQUIPMENT        │
+                    ├─────────────────────┤
+                    │ • id (PK)           │
+                    │ • equipment_name    │
+                    │ • type              │
+                    │ • purchase_date     │
+                    │ • last_maintenance  │
+                    │ • next_maintenance  │
+                    │ • condition         │  Conditions: excellent, good, fair, poor, needs_repair
+                    │ • value             │
+                    │ • notes             │
+                    └─────────────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                              7. EMPLOYEE MODULE                                          │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌─────────────────────┐
+                    │    EMPLOYEES        │
+                    ├─────────────────────┤
+                    │ • id (PK)           │
+                    │ • name              │
+                    │ • role              │
+                    │ • phone             │
+                    │ • email             │
+                    │ • salary            │
+                    │ • hire_date         │
+                    │ • status            │  Status: active, inactive, terminated
+                    │ • notes             │
+                    └─────────────────────┘
+
+
+╔═══════════════════════════════════════════════════════════════════════════════════════════╗
+║                                  RELATIONSHIP SUMMARY                                     ║
+╚═══════════════════════════════════════════════════════════════════════════════════════════╝
+
+┌────────────────────────────────────────────────────────────────────────────────────────┐
+│  PARENT TABLE          RELATIONSHIP    CHILD TABLE                  DELETE BEHAVIOR     │
+├────────────────────────────────────────────────────────────────────────────────────────┤
+│  CROPS              ──1:N──>  CROP_SALES                           CASCADE             │
+│  CROPS              ──1:N──>  CROP_PRODUCTION                      CASCADE             │
+│  CROPS              ──1:N──>  CROP_GROWTH_MONITORING               CASCADE             │
+│  LIVESTOCK          ──1:N──>  LIVESTOCK_HEALTH                     CASCADE             │
+│  LIVESTOCK          ──1:N──>  LIVESTOCK_PRODUCTION                 CASCADE             │
+│  LIVESTOCK          ──1:N──>  LIVESTOCK_MORTALITY                  SET NULL            │
+│  LIVESTOCK          ──1:N──>  LIVESTOCK_SALES                      SET NULL            │
+│  INVENTORY          ──1:N──>  INVENTORY_TRANSACTIONS               CASCADE             │
+│  CROP_SALES         ──1:1──>  INCOME (optional)                    -                   │
+│  LIVESTOCK_SALES    ──1:1──>  INCOME (optional)                    -                   │
+└────────────────────────────────────────────────────────────────────────────────────────┘
+
+
+╔═══════════════════════════════════════════════════════════════════════════════════════════╗
+║                                    DATABASE STATISTICS                                    ║
+╚═══════════════════════════════════════════════════════════════════════════════════════════╝
+
+    Total Tables: 16
+    Total Fields: 161
+    Total Relationships: 10
+    Total Indexes: 35+
+    Total ENUM Types: 8
+
+    Module Breakdown:
+    ┌────────────────────────┬────────┬────────┐
+    │ Module                 │ Tables │ Fields │
+    ├────────────────────────┼────────┼────────┤
+    │ User Management        │   1    │   7    │
+    │ Crop Management        │   4    │  45    │
+    │ Livestock Management   │   5    │  60    │
+    │ Financial              │   2    │  14    │
+    │ Inventory              │   2    │  15    │
+    │ Equipment              │   1    │  10    │
+    │ Employee               │   1    │  10    │
+    └────────────────────────┴────────┴────────┘
+
+
+╔═══════════════════════════════════════════════════════════════════════════════════════════╗
+║                                    KEY FEATURES                                           ║
+╚═══════════════════════════════════════════════════════════════════════════════════════════╝
+
+    ✓ InnoDB Engine - Transaction support
+    ✓ UTF8MB4 Charset - International characters
+    ✓ Foreign Keys - Referential integrity
+    ✓ Indexes - Optimized queries
+    ✓ ENUM Types - Data validation
+    ✓ Timestamps - Audit trail
+    ✓ Cascade Deletes - Data consistency
+    ✓ Unique Constraints - Data integrity
+
+
+Legend:
+    PK  = Primary Key
+    FK  = Foreign Key
+    UK  = Unique Key
+    1:N = One-to-Many Relationship
+    1:1 = One-to-One Relationship
+    ──> = Relationship Direction

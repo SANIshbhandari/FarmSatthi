@@ -14,7 +14,22 @@ if (isLoggedIn()) {
     // Redirect to dashboard
     redirect('dashboard/index.php');
 } else {
-    // Redirect to login
-    redirect('auth/login.php');
+    // Check if any users exist
+    try {
+        $conn = getDBConnection();
+        $result = $conn->query("SELECT COUNT(*) as count FROM users");
+        $userCount = $result->fetch_assoc()['count'];
+        
+        if ($userCount == 0) {
+            // No users exist, redirect to signup
+            redirect('auth/signup.php');
+        } else {
+            // Users exist, redirect to login
+            redirect('auth/login.php');
+        }
+    } catch (Exception $e) {
+        // Database error, show setup page
+        redirect('check_setup.php');
+    }
 }
 ?>

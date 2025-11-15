@@ -5,6 +5,7 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/functions.php';
+require_once __DIR__ . '/nepali_date.php';
 require_once __DIR__ . '/../auth/session.php';
 
 // Check if user is logged in for protected pages
@@ -38,7 +39,7 @@ $currentModule = $currentModule ?? '';
                     <span class="username">👤 <?php echo htmlspecialchars($_SESSION['username']); ?></span>
                     <span class="user-role">(<?php echo htmlspecialchars($_SESSION['role']); ?>)</span>
                     <?php if ($_SESSION['role'] === 'admin'): ?>
-                    <a href="<?php echo url('auth/register.php'); ?>" class="btn btn-secondary">+ User</a>
+                    <a href="<?php echo url('admin/users/add.php'); ?>" class="btn btn-secondary">+ User</a>
                     <?php endif; ?>
                     <a href="<?php echo url('auth/logout.php'); ?>" class="btn btn-logout">Logout</a>
                 </div>
@@ -53,13 +54,22 @@ $currentModule = $currentModule ?? '';
             <button class="mobile-menu-toggle" id="mobileMenuToggle">☰</button>
             <ul class="nav-menu" id="navMenu">
                 <li><a href="<?php echo url('dashboard/index.php'); ?>" class="<?php echo $currentModule === 'dashboard' ? 'active' : ''; ?>">Dashboard</a></li>
-                <li><a href="<?php echo url('crops/index.php'); ?>" class="<?php echo $currentModule === 'crops' ? 'active' : ''; ?>">Crops</a></li>
-                <li><a href="<?php echo url('livestock/index.php'); ?>" class="<?php echo $currentModule === 'livestock' ? 'active' : ''; ?>">Livestock</a></li>
-                <li><a href="<?php echo url('equipment/index.php'); ?>" class="<?php echo $currentModule === 'equipment' ? 'active' : ''; ?>">Equipment</a></li>
-                <li><a href="<?php echo url('employees/index.php'); ?>" class="<?php echo $currentModule === 'employees' ? 'active' : ''; ?>">Employees</a></li>
-                <li><a href="<?php echo url('expenses/index.php'); ?>" class="<?php echo $currentModule === 'expenses' ? 'active' : ''; ?>">Expenses</a></li>
-                <li><a href="<?php echo url('inventory/index.php'); ?>" class="<?php echo $currentModule === 'inventory' ? 'active' : ''; ?>">Inventory</a></li>
-                <li><a href="<?php echo url('reports/index.php'); ?>" class="<?php echo $currentModule === 'reports' ? 'active' : ''; ?>">Reports</a></li>
+                
+                <?php if ($_SESSION['role'] === 'admin'): ?>
+                    <!-- Admin Menu: User Management & Reports Only -->
+                    <li><a href="<?php echo url('admin/users/index.php'); ?>" class="<?php echo $currentModule === 'users' ? 'active' : ''; ?>">User Management</a></li>
+                    <li><a href="<?php echo url('admin/activity/index.php'); ?>" class="<?php echo $currentModule === 'activity' ? 'active' : ''; ?>">User Activity</a></li>
+                    <li><a href="<?php echo url('reports/index.php'); ?>" class="<?php echo $currentModule === 'reports' ? 'active' : ''; ?>">Reports</a></li>
+                <?php else: ?>
+                    <!-- Manager Menu: Farm Operations -->
+                    <li><a href="<?php echo url('crops/index.php'); ?>" class="<?php echo $currentModule === 'crops' ? 'active' : ''; ?>">Crops</a></li>
+                    <li><a href="<?php echo url('livestock/index.php'); ?>" class="<?php echo $currentModule === 'livestock' ? 'active' : ''; ?>">Livestock</a></li>
+                    <li><a href="<?php echo url('equipment/index.php'); ?>" class="<?php echo $currentModule === 'equipment' ? 'active' : ''; ?>">Equipment</a></li>
+                    <li><a href="<?php echo url('employees/index.php'); ?>" class="<?php echo $currentModule === 'employees' ? 'active' : ''; ?>">Employees</a></li>
+                    <li><a href="<?php echo url('expenses/index.php'); ?>" class="<?php echo $currentModule === 'expenses' ? 'active' : ''; ?>">Expenses</a></li>
+                    <li><a href="<?php echo url('inventory/index.php'); ?>" class="<?php echo $currentModule === 'inventory' ? 'active' : ''; ?>">Inventory</a></li>
+                    <li><a href="<?php echo url('reports/index.php'); ?>" class="<?php echo $currentModule === 'reports' ? 'active' : ''; ?>">Reports</a></li>
+                <?php endif; ?>
             </ul>
         </div>
     </nav>

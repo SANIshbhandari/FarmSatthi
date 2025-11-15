@@ -155,20 +155,31 @@ function redirect($url) {
 }
 
 /**
- * Format currency
+ * Format currency in Nepali Rupees
  * @param float $amount Amount to format
  * @return string Formatted currency string
  */
 function formatCurrency($amount) {
-    return '$' . number_format($amount, 2);
+    return 'Rs. ' . number_format($amount, 2);
 }
 
 /**
- * Format date for display
+ * Format date for display (Nepali format)
  * @param string $date Date string
- * @return string Formatted date
+ * @return string Formatted Nepali date
  */
 function formatDate($date) {
+    if (empty($date)) return '';
+    require_once __DIR__ . '/nepali_date.php';
+    return toNepaliDate($date, 'long');
+}
+
+/**
+ * Format date in English (for forms and inputs)
+ * @param string $date Date string
+ * @return string Formatted English date
+ */
+function formatDateEnglish($date) {
     if (empty($date)) return '';
     return date('M d, Y', strtotime($date));
 }
@@ -220,5 +231,37 @@ function verifyCSRFToken($token) {
         session_start();
     }
     return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+}
+
+/**
+ * Log user activity
+ * @param string $action Action performed (create, update, delete, view)
+ * @param string $module Module name (crops, livestock, equipment, etc.)
+ * @param string $description Description of the action
+ */
+function logActivity($action, $module, $description = '') {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    
+    // Only log if user is logged in
+    if (!isset($_SESSION['user_id'])) {
+        return;
+    }
+    
+    try {
+        $conn = getDBConnection();
+        $user_id = $_SESSION['user_id'];
+        $username = $_SESSION['username'];
+        $ip_address = $_SERVER['REMOTE_ADDR'] ?? 'Unknown';
+        
+        $stmt = $conn->prepare("INSERT INTO activity_log (user_id, username, action, module, description, ip_address) VALUES (?, ?, ?, ?, ?, ?)");
+        $stmt->bind_param("isssss", $user_id, $username, $action, $module, $description, $ip_address);
+        $stmt->execute();
+        $stmt->close();
+    } catch (Exception $e) {
+        // Silently fail - don't break the application if logging fails
+        error_log("Activity logging failed: " . $e->getMessage());
+    }
 }
 ?>
