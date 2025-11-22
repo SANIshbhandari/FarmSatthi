@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1100" width="1400" height="1100">
+  <defs>
+    <style>
+      .table-box { fill: #ffffff; stroke: #2c3e50; stroke-width: 2; }
+      .table-header { fill: #3498db; stroke: #2c3e50; stroke-width: 2; }
+      .table-text { font-family: 'Courier New', monospace; font-size: 12px; fill: #2c3e50; }
+      .table-header-text { font-family: Arial, sans-serif; font-size: 14px; font-weight: bold; fill: #ffffff; }
+      .relationship-line { stroke: #e74c3c; stroke-width: 2; fill: none; marker-end: url(#arrowhead); }
+      .fk-line { stroke: #27ae60; stroke-width: 2; fill: none; stroke-dasharray: 5,5; }
+      .section-title { font-family: Arial, sans-serif; font-size: 16px; font-weight: bold; fill: #2c3e50; }
+      .pk { fill: #e74c3c; font-weight: bold; }
+      .fk { fill: #27ae60; font-weight: bold; }
+    </style>
+    <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#e74c3c" />
+    </marker>
+  </defs>
+
+  <!-- Title -->
+  <text x="700" y="30" text-anchor="middle" style="font-family: Arial; font-size: 20px; font-weight: bold; fill: #2c3e50;">
+    Farm Management System - Entity Relationship Diagram
+  </text>
+
+  <!-- Legend -->
+  <rect x="20" y="50" width="300" height="80" fill="#f8f9fa" stroke="#2c3e50" stroke-width="1" rx="5"/>
+  <text x="30" y="70" class="section-title">Legend:</text>
+  <text x="30" y="90" class="table-text">
+    <tspan class="pk">PK</tspan> = Primary Key  
+    <tspan class="fk">FK</tspan> = Foreign Key
+  </text>
+  <line x1="30" y1="100" x2="80" y2="100" class="relationship-line"/>
+  <text x="85" y="105" class="table-text">1:N Relationship</text>
+  <line x1="30" y1="115" x2="80" y2="115" class="fk-line"/>
+  <text x="85" y="120" class="table-text">FK Constraint</text>
+
+  <!-- USERS TABLE (Central) -->
+  <rect x="600" y="150" width="200" height="30" class="table-header" rx="5"/>
+  <text x="700" y="170" text-anchor="middle" class="table-header-text">users</text>
+  <rect x="600" y="180" width="200" height="140" class="table-box"/>
+  <text x="610" y="200" class="table-text">
+    <tspan x="610" dy="0" class="pk">id</tspan>
+    <tspan x="750" dy="0">PK</tspan>
+    <tspan x="610" dy="15">username</tspan>
+    <tspan x="610" dy="15">password</tspan>
+    <tspan x="610" dy="15">email</tspan>
+    <tspan x="610" dy="15">role</tspan>
+    <tspan x="610" dy="15">last_login</tspan>
+    <tspan x="610" dy="15">created_at</tspan>
+  </text>
+
+  <!-- CROPS TABLE -->
+  <rect x="50" y="400" width="200" height="30" class="table-header" rx="5"/>
+  <text x="150" y="420" text-anchor="middle" class="table-header-text">crops</text>
+  <rect x="50" y="430" width="200" height="200" class="table-box"/>
+  <text x="60" y="450" class="table-text">
+    <tspan x="60" dy="0" class="pk">id</tspan>
+    <tspan x="200" dy="0">PK</tspan>
+    <tspan x="60" dy="15" class="fk">created_by</tspan>
+    <tspan x="200" dy="0">FK</tspan>
+    <tspan x="60" dy="15">crop_name</tspan>
+    <tspan x="60" dy="15">crop_type</tspan>
+    <tspan x="60" dy="15">planting_date</tspan>
+    <tspan x="60" dy="15">expected_harvest</tspan>
+    <tspan x="60" dy="15">field_location</tspan>
+    <tspan x="60" dy="15">area_hectares</tspan>
+    <tspan x="60" dy="15">status</tspan>
+    <tspan x="60" dy="15">notes</tspan>
+    <tspan x="60" dy="15">created_at</tspan>
+  </text>
+
+  <!-- LIVESTOCK TABLE -->
+  <rect x="300" y="400" width="200" height="30" class="table-header" rx="5"/>
+  <text x="400" y="420" text-anchor="middle" class="table-header-text">livestock</text>
+  <rect x="300" y="430" width="200" height="180" class="table-box"/>
+  <text x="310" y="450" class="table-text">
+    <tspan x="310" dy="0" class="pk">id</tspan>
+    <tspan x="450" dy="0">PK</tspan>
+    <tspan x="310" dy="15" class="fk">created_by</tspan>
+    <tspan x="450" dy="0">FK</tspan>
+    <tspan x="310" dy="15">animal_type</tspan>
+    <tspan x="310" dy="15">breed</tspan>
+    <tspan x="310" dy="15">count</tspan>
+    <tspan x="310" dy="15">age_months</tspan>
+    <tspan x="310" dy="15">health_status</tspan>
+    <tspan x="310" dy="15">purchase_date</tspan>
+    <tspan x="310" dy="15">current_value</tspan>
+    <tspan x="310" dy="15">notes</tspan>
+    <tspan x="310" dy="15">created_at</tspan>
+  </text>
+
+  <!-- EQUIPMENT TABLE -->
+  <rect x="550" y="400" width="200" height="30" class="table-header" rx="5"/>
+  <text x="650" y="420" text-anchor="middle" class="table-header-text">equipment</text>
+  <rect x="550" y="430" width="200" height="180" class="table-box"/>
+  <text x="560" y="450" class="table-text">
+    <tspan x="560" dy="0" class="pk">id</tspan>
+    <tspan x="700" dy="0">PK</tspan>
+    <tspan x="560" dy="15" class="fk">created_by</tspan>
+    <tspan x="700" dy="0">FK</tspan>
+    <tspan x="560" dy="15">equipment_name</tspan>
+    <tspan x="560" dy="15">type</tspan>
+    <tspan x="560" dy="15">purchase_date</tspan>
+    <tspan x="560" dy="15">last_maintenance</tspan>
+    <tspan x="560" dy="15">next_maintenance</tspan>
+    <tspan x="560" dy="15">condition</tspan>
+    <tspan x="560" dy="15">value</tspan>
+    <tspan x="560" dy="15">notes</tspan>
+    <tspan x="560" dy="15">created_at</tspan>
+  </text>
+
+  <!-- EMPLOYEES TABLE -->
+  <rect x="800" y="400" width="200" height="30" class="table-header" rx="5"/>
+  <text x="900" y="420" text-anchor="middle" class="table-header-text">employees</text>
+  <rect x="800" y="430" width="200" height="180" class="table-box"/>
+  <text x="810" y="450" class="table-text">
+    <tspan x="810" dy="0" class="pk">id</tspan>
+    <tspan x="950" dy="0">PK</tspan>
+    <tspan x="810" dy="15" class="fk">created_by</tspan>
+    <tspan x="950" dy="0">FK</tspan>
+    <tspan x="810" dy="15">name</tspan>
+    <tspan x="810" dy="15">role</tspan>
+    <tspan x="810" dy="15">phone</tspan>
+    <tspan x="810" dy="15">email</tspan>
+    <tspan x="810" dy="15">salary</tspan>
+    <tspan x="810" dy="15">hire_date</tspan>
+    <tspan x="810" dy="15">status</tspan>
+    <tspan x="810" dy="15">notes</tspan>
+    <tspan x="810" dy="15">created_at</tspan>
+  </text>
+
+  <!-- EXPENSES TABLE -->
+  <rect x="1050" y="400" width="200" height="30" class="table-header" rx="5"/>
+  <text x="1150" y="420" text-anchor="middle" class="table-header-text">expenses</text>
+  <rect x="1050" y="430" width="200" height="140" class="table-box"/>
+  <text x="1060" y="450" class="table-text">
+    <tspan x="1060" dy="0" class="pk">id</tspan>
+    <tspan x="1200" dy="0">PK</tspan>
+    <tspan x="1060" dy="15" class="fk">created_by</tspan>
+    <tspan x="1200" dy="0">FK</tspan>
+    <tspan x="1060" dy="15">category</tspan>
+    <tspan x="1060" dy="15">amount</tspan>
+    <tspan x="1060" dy="15">expense_date</tspan>
+    <tspan x="1060" dy="15">description</tspan>
+    <tspan x="1060" dy="15">payment_method</tspan>
+    <tspan x="1060" dy="15">created_at</tspan>
+  </text>
+
+  <!-- INVENTORY TABLE -->
+  <rect x="1050" y="650" width="200" height="30" class="table-header" rx="5"/>
+  <text x="1150" y="670" text-anchor="middle" class="table-header-text">inventory</text>
+  <rect x="1050" y="680" width="200" height="140" class="table-box"/>
+  <text x="1060" y="700" class="table-text">
+    <tspan x="1060" dy="0" class="pk">id</tspan>
+    <tspan x="1200" dy="0">PK</tspan>
+    <tspan x="1060" dy="15" class="fk">created_by</tspan>
+    <tspan x="1200" dy="0">FK</tspan>
+    <tspan x="1060" dy="15">item_name</tspan>
+    <tspan x="1060" dy="15">category</tspan>
+    <tspan x="1060" dy="15">quantity</tspan>
+    <tspan x="1060" dy="15">unit</tspan>
+    <tspan x="1060" dy="15">reorder_level</tspan>
+    <tspan x="1060" dy="15">last_updated</tspan>
+  </text>
+
+  <!-- CROP_SALES TABLE -->
+  <rect x="50" y="700" width="200" height="30" class="table-header" rx="5"/>
+  <text x="150" y="720" text-anchor="middle" class="table-header-text">crop_sales</text>
+  <rect x="50" y="730" width="200" height="220" class="table-box"/>
+  <text x="60" y="750" class="table-text">
+    <tspan x="60" dy="0" class="pk">id</tspan>
+    <tspan x="200" dy="0">PK</tspan>
+    <tspan x="60" dy="15" class="fk">created_by</tspan>
+    <tspan x="200" dy="0">FK</tspan>
+    <tspan x="60" dy="15" class="fk">crop_id</tspan>
+    <tspan x="200" dy="0">FK</tspan>
+    <tspan x="60" dy="15">crop_name</tspan>
+    <tspan x="60" dy="15">quantity</tspan>
+    <tspan x="60" dy="15">unit</tspan>
+    <tspan x="60" dy="15">selling_price</tspan>
+    <tspan x="60" dy="15">production_cost</tspan>
+    <tspan x="60" dy="15">profit_loss</tspan>
+    <tspan x="60" dy="15">buyer_name</tspan>
+    <tspan x="60" dy="15">buyer_contact</tspan>
+    <tspan x="60" dy="15">sale_date</tspan>
+    <tspan x="60" dy="15">notes</tspan>
+    <tspan x="60" dy="15">created_at</tspan>
+  </text>
+
+  <!-- LIVESTOCK_SALES TABLE -->
+  <rect x="300" y="700" width="200" height="30" class="table-header" rx="5"/>
+  <text x="400" y="720" text-anchor="middle" class="table-header-text">livestock_sales</text>
+  <rect x="300" y="730" width="200" height="220" class="table-box"/>
+  <text x="310" y="750" class="table-text">
+    <tspan x="310" dy="0" class="pk">id</tspan>
+    <tspan x="450" dy="0">PK</tspan>
+    <tspan x="310" dy="15" class="fk">created_by</tspan>
+    <tspan x="450" dy="0">FK</tspan>
+    <tspan x="310" dy="15" class="fk">livestock_id</tspan>
+    <tspan x="450" dy="0">FK</tspan>
+    <tspan x="310" dy="15">animal_type</tspan>
+    <tspan x="310" dy="15">breed</tspan>
+    <tspan x="310" dy="15">quantity</tspan>
+    <tspan x="310" dy="15">selling_price</tspan>
+    <tspan x="310" dy="15">purchase_cost</tspan>
+    <tspan x="310" dy="15">profit_loss</tspan>
+    <tspan x="310" dy="15">buyer_name</tspan>
+    <tspan x="310" dy="15">buyer_contact</tspan>
+    <tspan x="310" dy="15">sale_date</tspan>
+    <tspan x="310" dy="15">notes</tspan>
+    <tspan x="310" dy="15">created_at</tspan>
+  </text>
+
+  <!-- INCOME TABLE -->
+  <rect x="600" y="700" width="200" height="30" class="table-header" rx="5"/>
+  <text x="700" y="720" text-anchor="middle" class="table-header-text">income</text>
+  <rect x="600" y="730" width="200" height="140" class="table-box"/>
+  <text x="610" y="750" class="table-text">
+    <tspan x="610" dy="0" class="pk">id</tspan>
+    <tspan x="750" dy="0">PK</tspan>
+    <tspan x="610" dy="15" class="fk">created_by</tspan>
+    <tspan x="750" dy="0">FK</tspan>
+    <tspan x="610" dy="15">source</tspan>
+    <tspan x="610" dy="15">reference_id</tspan>
+    <tspan x="610" dy="15">amount</tspan>
+    <tspan x="610" dy="15">income_date</tspan>
+    <tspan x="610" dy="15">description</tspan>
+    <tspan x="610" dy="15">created_at</tspan>
+  </text>
+
+  <!-- Relationships from USERS -->
+  <!-- Users to Crops -->
+  <path d="M 650 320 L 150 400" class="fk-line"/>
+  <!-- Users to Livestock -->
+  <path d="M 680 320 L 400 400" class="fk-line"/>
+  <!-- Users to Equipment -->
+  <path d="M 700 320 L 650 400" class="fk-line"/>
+  <!-- Users to Employees -->
+  <path d="M 720 320 L 900 400" class="fk-line"/>
+  <!-- Users to Expenses -->
+  <path d="M 750 320 L 1150 400" class="fk-line"/>
+  <!-- Users to Inventory -->
+  <path d="M 770 320 L 1150 680" class="fk-line"/>
+  <!-- Users to Crop Sales -->
+  <path d="M 630 320 L 150 730" class="fk-line"/>
+  <!-- Users to Livestock Sales -->
+  <path d="M 660 320 L 400 730" class="fk-line"/>
+  <!-- Users to Income -->
+  <path d="M 700 320 L 700 730" class="fk-line"/>
+
+  <!-- Crops to Crop Sales -->
+  <path d="M 150 630 L 150 700" class="relationship-line"/>
+  <text x="160" y="670" class="table-text" style="fill: #e74c3c;">1:N</text>
+
+  <!-- Livestock to Livestock Sales -->
+  <path d="M 400 610 L 400 700" class="relationship-line"/>
+  <text x="410" y="660" class="table-text" style="fill: #e74c3c;">1:N</text>
+
+  <!-- Crop Sales to Income -->
+  <path d="M 250 840 L 600 800" class="relationship-line"/>
+  <text x="400" y="820" class="table-text" style="fill: #e74c3c;">N:1</text>
+
+  <!-- Livestock Sales to Income -->
+  <path d="M 500 840 L 600 800" class="relationship-line"/>
+  <text x="540" y="820" class="table-text" style="fill: #e74c3c;">N:1</text>
+
+  <!-- Section Labels -->
+  <text x="20" y="380" class="section-title">Agricultural Operations</text>
+  <text x="800" y="380" class="section-title">Human Resources</text>
+  <text x="1050" y="380" class="section-title">Finance</text>
+  <text x="20" y="680" class="section-title">Sales Tracking</text>
+  <text x="600" y="680" class="section-title">Revenue</text>
+
+  <!-- Cardinality Notes -->
+  <rect x="20" y="1000" width="1360" height="80" fill="#f8f9fa" stroke="#2c3e50" stroke-width="1" rx="5"/>
+  <text x="30" y="1020" class="section-title">Key Relationships:</text>
+  <text x="30" y="1040" class="table-text">
+    • All data tables have N:1 relationship with users (created_by FK) for data isolation
+  </text>
+  <text x="30" y="1055" class="table-text">
+    • crops and livestock have 1:N relationships with their respective sales tables
+  </text>
+  <text x="30" y="1070" class="table-text">
+    • crop_sales and livestock_sales have N:1 relationships with income (reference tracking)
+  </text>
+
+</svg>

@@ -26,11 +26,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($error = validatePositive($current_value, 'Current value')) $errors[] = $error;
     
     if (empty($errors)) {
+        $createdBy = getCreatedByUserId();
         $stmt = $conn->prepare("
-            INSERT INTO livestock (animal_type, breed, count, age_months, health_status, purchase_date, current_value, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO livestock (created_by, animal_type, breed, count, age_months, health_status, purchase_date, current_value, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
-        $stmt->bind_param("ssiissds", $animal_type, $breed, $count, $age_months, $health_status, $purchase_date, $current_value, $notes);
+        $stmt->bind_param("issiissds", $createdBy, $animal_type, $breed, $count, $age_months, $health_status, $purchase_date, $current_value, $notes);
         
         if ($stmt->execute()) {
             $stmt->close();

@@ -14,6 +14,9 @@ if ($id <= 0) {
     redirect('index.php');
 }
 
+// Verify record ownership
+verifyRecordOwnership($conn, 'employees', $id, 'index.php');
+
 $stmt = $conn->prepare("SELECT * FROM employees WHERE id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();

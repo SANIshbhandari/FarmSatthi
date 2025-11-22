@@ -28,11 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($errors)) {
         $email = !empty($email) ? $email : null;
         
+        $createdBy = getCreatedByUserId();
         $stmt = $conn->prepare("
-            INSERT INTO employees (name, role, phone, email, salary, hire_date, status, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO employees (created_by, name, role, phone, email, salary, hire_date, status, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
-        $stmt->bind_param("ssssdsss", $name, $role, $phone, $email, $salary, $hire_date, $status, $notes);
+        $stmt->bind_param("issssdsss", $createdBy, $name, $role, $phone, $email, $salary, $hire_date, $status, $notes);
         
         if ($stmt->execute()) {
             $stmt->close();

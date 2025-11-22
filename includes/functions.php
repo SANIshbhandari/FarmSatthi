@@ -264,4 +264,123 @@ function logActivity($action, $module, $description = '') {
         error_log("Activity logging failed: " . $e->getMessage());
     }
 }
+
+/**
+ * ============================================================================
+ * DATA ISOLATION FUNCTIONS
+ * These functions implement user-based data isolation for managers
+ * ============================================================================
+ */
+
+/**
+ * Get WHERE clause for data isolation
+ * Admins see all data, managers see only their own data
+ * @param string $tableAlias Optional table alias (e.g., 'c' for crops)
+ * @return string WHERE clause condition (e.g., "created_by = 5" or "1=1")
+ */
+function getDataIsolationWhere($tableAlias = '') {
+    $role = getCurrentUserRole();
+    $userId = getCurrentUserId();
+    
+    // Admins see all data
+    if ($role === 'admin') {
+        return '1=1';
+    }
+    
+    // Managers see only their own data
+    $column = $tableAlias ? "$tableAlias.created_by" : 'created_by';
+    return "$column = $userId";
+}
+
+/**
+ * Check if current user can access a specific record
+ * @param int $recordUserId The user_id who created the record
+ * @return bool True if user can access, false otherwise
+ */
+function canAccessRecord($recordUserId) {
+    $role = getCurrentUserRole();
+    $userId = getCurrentUserId();
+    
+    // Admins can access all records
+    if ($role === 'admin') {
+        return true;
+    }
+    
+    // Managers can only access their own records
+    return $userId == $recordUserId;
+}
+
+/**
+ * Get current user ID for INSERT operations
+ * Returns the logged-in user's ID to be used as created_by value
+ * @return int User ID
+ */
+function getCreatedByUserId() {
+    return getCurrentUserId();
+}
+
+/**
+ * Verify record ownership before UPDATE/DELETE operations
+ * Redirects with error message if user doesn't have access
+ * @param mysqli $conn Database connection
+ * @param string $table Table name
+ * @param int $recordId Record ID to check
+ * @param string $redirectUrl URL to redirect to if access denied
+ */
+function verifyRecordOwnership($conn, $table, $recordId, $redirectUrl = 'index.php') {
+    $stmt = $conn->prepare("SELECT created_by FROM $table WHERE id = ?");
+    $stmt->bind_param("i", $recordId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows === 0) {
+        setFlashMessage("Record not found.", 'error');
+        redirect($redirectUrl);
+    }
+    
+    $record = $result->fetch_assoc();
+    $stmt->close();
+    
+    if (!canAccessRecord($record['created_by'])) {
+        setFlashMessage("You don't have permission to access this record.", 'error');
+        redirect($redirectUrl);
+    }
+}
+
+/**
+ * Get user-specific statistics for dashboard
+ * @param mysqli $conn Database connection
+ * @return array Statistics array with counts
+ */
+function getUserStatistics($conn) {
+    $isolationWhere = getDataIsolationWhere();
+    
+    $stats = [];
+    
+    // Count crops
+    $result = $conn->query("SELECT COUNT(*) as count FROM crops WHERE $isolationWhere");
+    $stats['crops'] = $result->fetch_assoc()['count'];
+    
+    // Count livestock
+    $result = $conn->query("SELECT COUNT(*) as count FROM livestock WHERE $isolationWhere");
+    $stats['livestock'] = $result->fetch_assoc()['count'];
+    
+    // Count equipment
+    $result = $conn->query("SELECT COUNT(*) as count FROM equipment WHERE $isolationWhere");
+    $stats['equipment'] = $result->fetch_assoc()['count'];
+    
+    // Count employees
+    $result = $conn->query("SELECT COUNT(*) as count FROM employees WHERE $isolationWhere");
+    $stats['employees'] = $result->fetch_assoc()['count'];
+    
+    // Count expenses
+    $result = $conn->query("SELECT COUNT(*) as count FROM expenses WHERE $isolationWhere");
+    $stats['expenses'] = $result->fetch_assoc()['count'];
+    
+    // Count inventory items
+    $result = $conn->query("SELECT COUNT(*) as count FROM inventory WHERE $isolationWhere");
+    $stats['inventory'] = $result->fetch_assoc()['count'];
+    
+    return $stats;
+}
 ?>

@@ -1,4 +1,7 @@
 <?php
+// Add data isolation - each user sees only their own data
+$isolationWhere = getDataIsolationWhere();
+
 $whereConditions = ['1=1'];
 $params = [];
 $types = '';
@@ -16,41 +19,73 @@ if (!empty($filter->dateTo)) {
 
 $whereClause = implode(' AND ', $whereConditions);
 
-// Monthly trend query
-$trendQuery = "
-    SELECT 
-        DATE_FORMAT(date_col, '%Y-%m') as month,
-        SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
-        SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expenses,
-        SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) as net_profit
-    FROM (
-        SELECT income_date as date_col, amount, 'income' as type FROM income
-        UNION ALL
-        SELECT expense_date as date_col, amount, 'expense' as type FROM expenses
-    ) combined
-    WHERE $whereClause
-    GROUP BY month
-    ORDER BY month DESC
-";
+// Check if income table exists and has created_by column
+$conn = getDBConnection();
+$incomeTableExists = false;
+$hasCreatedBy = false;
 
-$trendResult = $reportGen->executeQuery($trendQuery, $params, $types);
+$tableCheck = $conn->query("SHOW TABLES LIKE 'income'");
+if ($tableCheck && $tableCheck->num_rows > 0) {
+    $incomeTableExists = true;
+    $columnCheck = $conn->query("SHOW COLUMNS FROM income LIKE 'created_by'");
+    $hasCreatedBy = $columnCheck && $columnCheck->num_rows > 0;
+}
 
-// Overall summary
-$summaryQuery = "
-    SELECT 
-        SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
-        SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expenses,
-        SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) as net_profit
-    FROM (
-        SELECT income_date as date_col, amount, 'income' as type FROM income
-        UNION ALL
-        SELECT expense_date as date_col, amount, 'expense' as type FROM expenses
-    ) combined
-    WHERE $whereClause
-";
+// Initialize default values
+$trendResult = null;
+$summary = ['total_income' => 0, 'total_expenses' => 0, 'net_profit' => 0];
 
-$summaryResult = $reportGen->executeQuery($summaryQuery, $params, $types);
-$summary = $summaryResult ? $summaryResult->fetch_assoc() : [];
+// Only run queries if income table exists with proper structure
+if ($incomeTableExists && $hasCreatedBy) {
+    // Monthly trend query with data isolation
+    $trendQuery = "
+        SELECT 
+            DATE_FORMAT(date_col, '%Y-%m') as month,
+            SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
+            SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expenses,
+            SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) as net_profit
+        FROM (
+            SELECT income_date as date_col, amount, 'income' as type FROM income WHERE $isolationWhere
+            UNION ALL
+            SELECT expense_date as date_col, amount, 'expense' as type FROM expenses WHERE $isolationWhere
+        ) combined
+        WHERE $whereClause
+        GROUP BY month
+        ORDER BY month DESC
+    ";
+
+    $trendResult = $reportGen->executeQuery($trendQuery, $params, $types);
+
+    // Overall summary with data isolation
+    $summaryQuery = "
+        SELECT 
+            SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as total_income,
+            SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as total_expenses,
+            SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) as net_profit
+        FROM (
+            SELECT income_date as date_col, amount, 'income' as type FROM income WHERE $isolationWhere
+            UNION ALL
+            SELECT expense_date as date_col, amount, 'expense' as type FROM expenses WHERE $isolationWhere
+        ) combined
+        WHERE $whereClause
+    ";
+
+    $summaryResult = $reportGen->executeQuery($summaryQuery, $params, $types);
+    $summary = $summaryResult ? $summaryResult->fetch_assoc() : $summary;
+} else {
+    // Fallback: Only use expenses data
+    $expenseQuery = "
+        SELECT 
+            0 as total_income,
+            COALESCE(SUM(amount), 0) as total_expenses,
+            -COALESCE(SUM(amount), 0) as net_profit
+        FROM expenses 
+        WHERE $isolationWhere AND $whereClause
+    ";
+    
+    $summaryResult = $reportGen->executeQuery($expenseQuery, $params, $types);
+    $summary = $summaryResult ? $summaryResult->fetch_assoc() : $summary;
+}
 
 $profitMargin = ($summary['total_income'] ?? 0) > 0 
     ? (($summary['net_profit'] ?? 0) / ($summary['total_income'] ?? 1)) * 100 
@@ -58,6 +93,22 @@ $profitMargin = ($summary['total_income'] ?? 0) > 0
 ?>
 
 <h3>Profit & Loss Report</h3>
+
+<?php if (!$incomeTableExists || !$hasCreatedBy): ?>
+<div class="alert alert-warning" style="background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin-bottom: 20px;">
+    <strong>⚠️ Notice:</strong> The income table is not fully configured. 
+    <?php if (!$incomeTableExists): ?>
+        The income table doesn't exist yet. 
+    <?php else: ?>
+        The income table is missing the created_by column for data isolation. 
+    <?php endif; ?>
+    This report will show expenses only. To enable full profit/loss tracking:
+    <ol style="margin: 10px 0 0 20px;">
+        <li>Run the database migration: <code>database/add_data_isolation.sql</code></li>
+        <li>Or use the fix tool: <a href="../fix_data_isolation.php">fix_data_isolation.php</a></li>
+    </ol>
+</div>
+<?php endif; ?>
 
 <div class="report-summary">
     <div class="summary-card">
@@ -89,34 +140,91 @@ $profitMargin = ($summary['total_income'] ?? 0) > 0
 
 <?php 
 // Prepare data for charts
-$trendResult->data_seek(0); // Reset pointer
 $chartData = [];
-while ($row = $trendResult->fetch_assoc()) {
-    $chartData[] = $row;
+if ($trendResult && $trendResult->num_rows > 0) {
+    $trendResult->data_seek(0); // Reset pointer
+    while ($row = $trendResult->fetch_assoc()) {
+        $chartData[] = $row;
+    }
+    $trendResult->data_seek(0); // Reset again for table
 }
-$trendResult->data_seek(0); // Reset again for table
 ?>
 
-<!-- Charts Section -->
-<div class="charts-container" style="margin: 30px 0;">
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 30px;">
-        <!-- Pie Chart -->
-        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h4 style="text-align: center; margin-bottom: 20px;">Income vs Expenses Distribution</h4>
-            <canvas id="pieChart" style="max-height: 300px;"></canvas>
-        </div>
-        
-        <!-- Profit Margin Gauge -->
-        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-            <h4 style="text-align: center; margin-bottom: 20px;">Profit Margin Indicator</h4>
-            <canvas id="gaugeChart" style="max-height: 300px;"></canvas>
+<!-- Financial Insights Section -->
+<div class="insights-container" style="margin: 30px 0;">
+    <?php
+    $profitMargin = $summary['total_income'] > 0 ? (($summary['net_profit'] / $summary['total_income']) * 100) : 0;
+    $isProfit = $summary['net_profit'] >= 0;
+    ?>
+    
+    <!-- Key Insights -->
+    <div style="background: linear-gradient(135deg, <?php echo $isProfit ? '#28a745' : '#dc3545'; ?> 0%, <?php echo $isProfit ? '#20c997' : '#c82333'; ?> 100%); padding: 30px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: white; margin-bottom: 20px;">
+        <h4 style="margin-top: 0; color: white;">📊 Financial Performance Summary</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-top: 20px;">
+            <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 6px; text-align: center;">
+                <div style="font-size: 2.5em; margin-bottom: 10px;">💰</div>
+                <div style="font-size: 0.9em; opacity: 0.9;">Total Income</div>
+                <div style="font-size: 1.5em; font-weight: bold; margin-top: 5px;"><?php echo formatCurrency($summary['total_income']); ?></div>
+            </div>
+            <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 6px; text-align: center;">
+                <div style="font-size: 2.5em; margin-bottom: 10px;">💸</div>
+                <div style="font-size: 0.9em; opacity: 0.9;">Total Expenses</div>
+                <div style="font-size: 1.5em; font-weight: bold; margin-top: 5px;"><?php echo formatCurrency($summary['total_expenses']); ?></div>
+            </div>
+            <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 6px; text-align: center;">
+                <div style="font-size: 2.5em; margin-bottom: 10px;"><?php echo $isProfit ? '📈' : '📉'; ?></div>
+                <div style="font-size: 0.9em; opacity: 0.9;">Net <?php echo $isProfit ? 'Profit' : 'Loss'; ?></div>
+                <div style="font-size: 1.5em; font-weight: bold; margin-top: 5px;"><?php echo formatCurrency($summary['net_profit']); ?></div>
+            </div>
+            <div style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 6px; text-align: center;">
+                <div style="font-size: 2.5em; margin-bottom: 10px;">📊</div>
+                <div style="font-size: 0.9em; opacity: 0.9;">Profit Margin</div>
+                <div style="font-size: 1.5em; font-weight: bold; margin-top: 5px;"><?php echo number_format($profitMargin, 1); ?>%</div>
+            </div>
         </div>
     </div>
     
-    <!-- Trend Line Chart -->
-    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px;">
-        <h4 style="text-align: center; margin-bottom: 20px;">Monthly Trend Analysis</h4>
-        <canvas id="trendChart" style="max-height: 400px;"></canvas>
+    <!-- Actionable Recommendations -->
+    <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px;">
+        <h4 style="margin-top: 0; color: #2c3e50;">💡 Recommendations for Your Farm</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px;">
+            <?php if ($profitMargin >= 20): ?>
+                <div style="border-left: 4px solid #28a745; padding: 15px; background: #d4edda;">
+                    <strong style="color: #155724;">✅ Excellent Performance!</strong>
+                    <p style="margin: 8px 0 0 0; color: #155724;">Your farm is highly profitable. Consider reinvesting profits into expansion or new equipment.</p>
+                </div>
+            <?php elseif ($profitMargin >= 10): ?>
+                <div style="border-left: 4px solid #ffc107; padding: 15px; background: #fff3cd;">
+                    <strong style="color: #856404;">👍 Good Performance</strong>
+                    <p style="margin: 8px 0 0 0; color: #856404;">Maintain current operations and look for opportunities to optimize costs further.</p>
+                </div>
+            <?php elseif ($profitMargin >= 0): ?>
+                <div style="border-left: 4px solid #fd7e14; padding: 15px; background: #ffe5d0;">
+                    <strong style="color: #8a4419;">⚠️ Low Profit Margin</strong>
+                    <p style="margin: 8px 0 0 0; color: #8a4419;">Review your expense categories and identify areas where costs can be reduced.</p>
+                </div>
+            <?php else: ?>
+                <div style="border-left: 4px solid #dc3545; padding: 15px; background: #f8d7da;">
+                    <strong style="color: #721c24;">❌ Operating at Loss</strong>
+                    <p style="margin: 8px 0 0 0; color: #721c24;">Urgent action needed! Review all expenses and consider increasing income sources.</p>
+                </div>
+            <?php endif; ?>
+            
+            <div style="border-left: 4px solid #17a2b8; padding: 15px; background: #d1ecf1;">
+                <strong style="color: #0c5460;">📈 Increase Income</strong>
+                <p style="margin: 8px 0 0 0; color: #0c5460;">Explore new markets, improve crop yields, or add value-added products to boost revenue.</p>
+            </div>
+            
+            <div style="border-left: 4px solid #6610f2; padding: 15px; background: #e7d6ff;">
+                <strong style="color: #3d0a91;">💰 Cost Management</strong>
+                <p style="margin: 8px 0 0 0; color: #3d0a91;">Negotiate bulk discounts with suppliers and eliminate unnecessary expenses.</p>
+            </div>
+            
+            <div style="border-left: 4px solid #20c997; padding: 15px; background: #d4f4ea;">
+                <strong style="color: #0f6848;">📊 Track Regularly</strong>
+                <p style="margin: 8px 0 0 0; color: #0f6848;">Monitor your finances weekly to catch issues early and make timely adjustments.</p>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -156,224 +264,7 @@ $trendResult->data_seek(0); // Reset again for table
 <div class="no-results"><p>No financial data available.</p></div>
 <?php endif; ?>
 
-<!-- Chart.js Library -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
 <script>
-// Debug: Check if Chart.js loaded
-console.log('Chart.js loaded:', typeof Chart !== 'undefined');
-console.log('Canvas elements found:', document.querySelectorAll('canvas').length);
-
-// Prepare chart data from PHP
-const chartData = <?php echo json_encode($chartData); ?>;
-const totalIncome = <?php echo $summary['total_income'] ?? 0; ?>;
-const totalExpenses = <?php echo $summary['total_expenses'] ?? 0; ?>;
-const profitMargin = <?php echo $profitMargin; ?>;
-
-// Debug: Log data
-console.log('Chart Data:', { chartData, totalIncome, totalExpenses, profitMargin });
-
-// Wait for DOM to be fully loaded
-if (typeof Chart === 'undefined') {
-    console.error('Chart.js library not loaded!');
-} else {
-    initializeCharts();
-}
-
-function initializeCharts() {
-    // Check if canvas elements exist
-    const pieCanvas = document.getElementById('pieChart');
-    const gaugeCanvas = document.getElementById('gaugeChart');
-    const trendCanvas = document.getElementById('trendChart');
-    
-    if (!pieCanvas || !gaugeCanvas || !trendCanvas) {
-        console.error('Canvas elements not found!');
-        return;
-    }
-    
-    console.log('Initializing charts...');
-
-// 1. PIE CHART - Income vs Expenses
-const pieCtx = pieCanvas.getContext('2d');
-new Chart(pieCtx, {
-    type: 'pie',
-    data: {
-        labels: ['Income', 'Expenses'],
-        datasets: [{
-            data: [totalIncome, totalExpenses],
-            backgroundColor: [
-                'rgba(75, 192, 192, 0.8)',
-                'rgba(255, 99, 132, 0.8)'
-            ],
-            borderColor: [
-                'rgba(75, 192, 192, 1)',
-                'rgba(255, 99, 132, 1)'
-            ],
-            borderWidth: 2
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-            legend: {
-                position: 'bottom',
-                labels: {
-                    font: { size: 14 },
-                    padding: 15
-                }
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        const label = context.label || '';
-                        const value = context.parsed || 0;
-                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        const percentage = ((value / total) * 100).toFixed(1);
-                        return label + ': Rs. ' + value.toLocaleString() + ' (' + percentage + '%)';
-                    }
-                }
-            }
-        }
-    }
-});
-
-// 2. GAUGE CHART - Profit Margin
-const gaugeCtx = document.getElementById('gaugeChart').getContext('2d');
-const gaugeValue = Math.min(Math.max(profitMargin, -100), 100); // Clamp between -100 and 100
-const gaugeColor = gaugeValue >= 0 ? 'rgba(75, 192, 192, 0.8)' : 'rgba(255, 99, 132, 0.8)';
-
-new Chart(gaugeCtx, {
-    type: 'doughnut',
-    data: {
-        labels: ['Profit Margin', 'Remaining'],
-        datasets: [{
-            data: [Math.abs(gaugeValue), 100 - Math.abs(gaugeValue)],
-            backgroundColor: [gaugeColor, 'rgba(200, 200, 200, 0.2)'],
-            borderWidth: 0
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        circumference: 180,
-        rotation: 270,
-        cutout: '70%',
-        plugins: {
-            legend: { display: false },
-            tooltip: { enabled: false }
-        }
-    },
-    plugins: [{
-        id: 'gaugeText',
-        afterDraw: (chart) => {
-            const ctx = chart.ctx;
-            const centerX = chart.chartArea.left + (chart.chartArea.right - chart.chartArea.left) / 2;
-            const centerY = chart.chartArea.top + (chart.chartArea.bottom - chart.chartArea.top) / 2 + 20;
-            
-            ctx.save();
-            ctx.font = 'bold 32px Arial';
-            ctx.fillStyle = gaugeColor.replace('0.8', '1');
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(profitMargin.toFixed(1) + '%', centerX, centerY);
-            
-            ctx.font = '14px Arial';
-            ctx.fillStyle = '#666';
-            ctx.fillText('Profit Margin', centerX, centerY + 30);
-            ctx.restore();
-        }
-    }]
-});
-
-// 3. TREND LINE CHART - Monthly Analysis
-const trendCtx = document.getElementById('trendChart').getContext('2d');
-const months = chartData.map(d => d.month).reverse();
-const incomeData = chartData.map(d => parseFloat(d.total_income)).reverse();
-const expenseData = chartData.map(d => parseFloat(d.total_expenses)).reverse();
-const profitData = chartData.map(d => parseFloat(d.net_profit)).reverse();
-
-new Chart(trendCtx, {
-    type: 'line',
-    data: {
-        labels: months,
-        datasets: [
-            {
-                label: 'Income',
-                data: incomeData,
-                borderColor: 'rgba(75, 192, 192, 1)',
-                backgroundColor: 'rgba(75, 192, 192, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4
-            },
-            {
-                label: 'Expenses',
-                data: expenseData,
-                borderColor: 'rgba(255, 99, 132, 1)',
-                backgroundColor: 'rgba(255, 99, 132, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4
-            },
-            {
-                label: 'Net Profit/Loss',
-                data: profitData,
-                borderColor: 'rgba(54, 162, 235, 1)',
-                backgroundColor: 'rgba(54, 162, 235, 0.1)',
-                borderWidth: 3,
-                fill: true,
-                tension: 0.4
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        interaction: {
-            mode: 'index',
-            intersect: false
-        },
-        plugins: {
-            legend: {
-                position: 'top',
-                labels: {
-                    font: { size: 14 },
-                    padding: 15,
-                    usePointStyle: true
-                }
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        return context.dataset.label + ': Rs. ' + context.parsed.y.toLocaleString();
-                    }
-                }
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    callback: function(value) {
-                        return 'Rs. ' + value.toLocaleString();
-                    }
-                },
-                grid: {
-                    color: 'rgba(0, 0, 0, 0.05)'
-                }
-            },
-            x: {
-                grid: {
-                    display: false
-                }
-            }
-        }
-    }
-});
-
-} // End of initializeCharts function
-
 // CSV Export Function
 function exportToCSV() {
     let csv = 'Profit & Loss Report\n\n';

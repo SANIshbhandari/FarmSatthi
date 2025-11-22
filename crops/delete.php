@@ -14,8 +14,12 @@ if ($id <= 0) {
     redirect('index.php');
 }
 
+// Verify record ownership before allowing delete
+verifyRecordOwnership($conn, 'crops', $id, 'index.php');
+
 // Delete the crop
-$stmt = $conn->prepare("DELETE FROM crops WHERE id = ?");
+$isolationWhere = getDataIsolationWhere();
+$stmt = $conn->prepare("DELETE FROM crops WHERE id = ? AND $isolationWhere");
 $stmt->bind_param("i", $id);
 
 if ($stmt->execute()) {

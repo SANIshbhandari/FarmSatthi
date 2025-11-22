@@ -29,11 +29,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Insert if no errors
     if (empty($errors)) {
+        $createdBy = getCreatedByUserId();
         $stmt = $conn->prepare("
-            INSERT INTO crops (crop_name, crop_type, planting_date, expected_harvest, field_location, area_hectares, status, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO crops (created_by, crop_name, crop_type, planting_date, expected_harvest, field_location, area_hectares, status, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
-        $stmt->bind_param("sssssdss", $crop_name, $crop_type, $planting_date, $expected_harvest, $field_location, $area_hectares, $status, $notes);
+        $stmt->bind_param("isssssdss", $createdBy, $crop_name, $crop_type, $planting_date, $expected_harvest, $field_location, $area_hectares, $status, $notes);
         
         if ($stmt->execute()) {
             $stmt->close();

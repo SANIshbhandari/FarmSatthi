@@ -1,5 +1,8 @@
 <?php
-$whereConditions = ['1=1'];
+// Add data isolation - each user sees only their own data
+$isolationWhere = getDataIsolationWhere();
+
+$whereConditions = [$isolationWhere];
 $params = [];
 $types = '';
 

@@ -14,6 +14,9 @@ if ($id <= 0) {
     redirect('index.php');
 }
 
+// Verify record ownership
+verifyRecordOwnership($conn, 'livestock', $id, 'index.php');
+
 $stmt = $conn->prepare("SELECT * FROM livestock WHERE id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();

@@ -40,17 +40,19 @@ $date_to = sanitizeInput($_GET['date_to'] ?? '');
 
 <?php if ($reportType === 'crops'): ?>
     <?php
+    $isolationWhere = getDataIsolationWhere();
     $result = $conn->query("SELECT 
         crop_type,
         COUNT(*) as count,
         SUM(area_hectares) as total_area,
         status
     FROM crops 
+    WHERE $isolationWhere
     GROUP BY crop_type, status
     ORDER BY crop_type, status");
     
-    $totalArea = $conn->query("SELECT SUM(area_hectares) as total FROM crops WHERE status = 'active'")->fetch_assoc()['total'];
-    $totalCrops = $conn->query("SELECT COUNT(*) as total FROM crops WHERE status = 'active'")->fetch_assoc()['total'];
+    $totalArea = $conn->query("SELECT SUM(area_hectares) as total FROM crops WHERE status = 'active' AND $isolationWhere")->fetch_assoc()['total'];
+    $totalCrops = $conn->query("SELECT COUNT(*) as total FROM crops WHERE status = 'active' AND $isolationWhere")->fetch_assoc()['total'];
     ?>
     
     <div class="report-content">
@@ -91,17 +93,19 @@ $date_to = sanitizeInput($_GET['date_to'] ?? '');
 
 <?php elseif ($reportType === 'livestock'): ?>
     <?php
+    $isolationWhere = getDataIsolationWhere();
     $result = $conn->query("SELECT 
         animal_type,
         health_status,
         SUM(count) as total_count,
         SUM(current_value) as total_value
     FROM livestock 
+    WHERE $isolationWhere
     GROUP BY animal_type, health_status
     ORDER BY animal_type, health_status");
     
-    $totalAnimals = $conn->query("SELECT SUM(count) as total FROM livestock")->fetch_assoc()['total'];
-    $totalValue = $conn->query("SELECT SUM(current_value) as total FROM livestock")->fetch_assoc()['total'];
+    $totalAnimals = $conn->query("SELECT SUM(count) as total FROM livestock WHERE $isolationWhere")->fetch_assoc()['total'];
+    $totalValue = $conn->query("SELECT SUM(current_value) as total FROM livestock WHERE $isolationWhere")->fetch_assoc()['total'];
     ?>
     
     <div class="report-content">
@@ -142,19 +146,21 @@ $date_to = sanitizeInput($_GET['date_to'] ?? '');
 
 <?php elseif ($reportType === 'equipment'): ?>
     <?php
+    $isolationWhere = getDataIsolationWhere();
     $result = $conn->query("SELECT 
         type,
         `condition`,
         COUNT(*) as count,
         SUM(value) as total_value
     FROM equipment 
+    WHERE $isolationWhere
     GROUP BY type, `condition`
     ORDER BY type, `condition`");
     
-    $totalEquipment = $conn->query("SELECT COUNT(*) as total FROM equipment")->fetch_assoc()['total'];
-    $totalValue = $conn->query("SELECT SUM(value) as total FROM equipment")->fetch_assoc()['total'];
+    $totalEquipment = $conn->query("SELECT COUNT(*) as total FROM equipment WHERE $isolationWhere")->fetch_assoc()['total'];
+    $totalValue = $conn->query("SELECT SUM(value) as total FROM equipment WHERE $isolationWhere")->fetch_assoc()['total'];
     
-    $maintenanceDue = $conn->query("SELECT * FROM equipment WHERE next_maintenance <= DATE_ADD(CURRENT_DATE(), INTERVAL 30 DAY) ORDER BY next_maintenance");
+    $maintenanceDue = $conn->query("SELECT * FROM equipment WHERE next_maintenance <= DATE_ADD(CURRENT_DATE(), INTERVAL 30 DAY) AND $isolationWhere ORDER BY next_maintenance");
     ?>
     
     <div class="report-content">
@@ -222,17 +228,19 @@ $date_to = sanitizeInput($_GET['date_to'] ?? '');
 
 <?php elseif ($reportType === 'employees'): ?>
     <?php
+    $isolationWhere = getDataIsolationWhere();
     $result = $conn->query("SELECT 
         role,
         status,
         COUNT(*) as count,
         SUM(salary) as total_salary
     FROM employees 
+    WHERE $isolationWhere
     GROUP BY role, status
     ORDER BY role, status");
     
-    $totalEmployees = $conn->query("SELECT COUNT(*) as total FROM employees WHERE status = 'active'")->fetch_assoc()['total'];
-    $totalSalary = $conn->query("SELECT SUM(salary) as total FROM employees WHERE status = 'active'")->fetch_assoc()['total'];
+    $totalEmployees = $conn->query("SELECT COUNT(*) as total FROM employees WHERE status = 'active' AND $isolationWhere")->fetch_assoc()['total'];
+    $totalSalary = $conn->query("SELECT SUM(salary) as total FROM employees WHERE status = 'active' AND $isolationWhere")->fetch_assoc()['total'];
     ?>
     
     <div class="report-content">
@@ -304,12 +312,13 @@ $date_to = sanitizeInput($_GET['date_to'] ?? '');
             $types .= 's';
         }
         
+        $isolationWhere = getDataIsolationWhere();
         $query = "SELECT 
             category,
             COUNT(*) as count,
             SUM(amount) as total_amount
         FROM expenses 
-        WHERE 1=1 $whereClause
+        WHERE $isolationWhere $whereClause
         GROUP BY category
         ORDER BY total_amount DESC";
         
@@ -320,7 +329,7 @@ $date_to = sanitizeInput($_GET['date_to'] ?? '');
         $stmt->execute();
         $result = $stmt->get_result();
         
-        $totalQuery = "SELECT SUM(amount) as total FROM expenses WHERE 1=1 $whereClause";
+        $totalQuery = "SELECT SUM(amount) as total FROM expenses WHERE $isolationWhere $whereClause";
         $stmt2 = $conn->prepare($totalQuery);
         if (!empty($params)) {
             $stmt2->bind_param($types, ...$params);

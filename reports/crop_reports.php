@@ -34,9 +34,6 @@ if (!$filter->isValid()) {
     <a href="?report=production" class="btn <?php echo $reportType === 'production' ? 'btn-primary' : 'btn-outline'; ?>">
         Production Report
     </a>
-    <a href="?report=growth" class="btn <?php echo $reportType === 'growth' ? 'btn-primary' : 'btn-outline'; ?>">
-        Growth Monitoring
-    </a>
     <a href="?report=sales" class="btn <?php echo $reportType === 'sales' ? 'btn-primary' : 'btn-outline'; ?>">
         Sales Report
     </a>
@@ -57,13 +54,14 @@ if (!$filter->isValid()) {
             <input type="date" name="date_to" value="<?php echo htmlspecialchars($filter->dateTo); ?>" class="form-control">
         </div>
         
-        <?php if ($reportType === 'production' || $reportType === 'growth'): ?>
+        <?php if ($reportType === 'production'): ?>
         <div class="filter-group">
             <label>Crop Type:</label>
             <select name="crop_type" class="form-control">
                 <option value="">All Types</option>
                 <?php
-                $types = $conn->query("SELECT DISTINCT crop_type FROM crops ORDER BY crop_type");
+                $isolationWhere = getDataIsolationWhere();
+                $types = $conn->query("SELECT DISTINCT crop_type FROM crops WHERE $isolationWhere ORDER BY crop_type");
                 while ($type = $types->fetch_assoc()):
                 ?>
                 <option value="<?php echo htmlspecialchars($type['crop_type']); ?>" 
@@ -71,20 +69,6 @@ if (!$filter->isValid()) {
                     <?php echo htmlspecialchars($type['crop_type']); ?>
                 </option>
                 <?php endwhile; ?>
-            </select>
-        </div>
-        <?php endif; ?>
-        
-        <?php if ($reportType === 'growth'): ?>
-        <div class="filter-group">
-            <label>Growth Stage:</label>
-            <select name="growth_stage" class="form-control">
-                <option value="">All Stages</option>
-                <option value="seedling" <?php echo ($filter->customFilters['growth_stage'] ?? '') === 'seedling' ? 'selected' : ''; ?>>Seedling</option>
-                <option value="vegetative" <?php echo ($filter->customFilters['growth_stage'] ?? '') === 'vegetative' ? 'selected' : ''; ?>>Vegetative</option>
-                <option value="flowering" <?php echo ($filter->customFilters['growth_stage'] ?? '') === 'flowering' ? 'selected' : ''; ?>>Flowering</option>
-                <option value="fruiting" <?php echo ($filter->customFilters['growth_stage'] ?? '') === 'fruiting' ? 'selected' : ''; ?>>Fruiting</option>
-                <option value="harvest" <?php echo ($filter->customFilters['growth_stage'] ?? '') === 'harvest' ? 'selected' : ''; ?>>Harvest</option>
             </select>
         </div>
         <?php endif; ?>
@@ -106,9 +90,6 @@ if (!$filter->isValid()) {
 switch ($reportType) {
     case 'production':
         include __DIR__ . '/crop_production_report.php';
-        break;
-    case 'growth':
-        include __DIR__ . '/crop_growth_report.php';
         break;
     case 'sales':
         include __DIR__ . '/crop_sales_report.php';

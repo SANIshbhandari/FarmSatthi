@@ -4,8 +4,10 @@
  * Shows crop name, field, dates, yields, costs, and profit
  */
 
-// Build query with filters
-$whereConditions = ['1=1'];
+// Build query with filters and data isolation
+$isolationWhere = getDataIsolationWhere('c');
+
+$whereConditions = [$isolationWhere];
 $params = [];
 $types = '';
 

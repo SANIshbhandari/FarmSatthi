@@ -26,14 +26,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($error = validatePositive($value, 'Value')) $errors[] = $error;
     
     if (empty($errors)) {
+        $createdBy = getCreatedByUserId();
         $last_maintenance = !empty($last_maintenance) ? $last_maintenance : null;
         $next_maintenance = !empty($next_maintenance) ? $next_maintenance : null;
         
         $stmt = $conn->prepare("
-            INSERT INTO equipment (equipment_name, type, purchase_date, last_maintenance, next_maintenance, `condition`, value, notes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO equipment (created_by, equipment_name, type, purchase_date, last_maintenance, next_maintenance, `condition`, value, notes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
-        $stmt->bind_param("ssssssds", $equipment_name, $type, $purchase_date, $last_maintenance, $next_maintenance, $condition, $value, $notes);
+        $stmt->bind_param("issssssds", $createdBy, $equipment_name, $type, $purchase_date, $last_maintenance, $next_maintenance, $condition, $value, $notes);
         
         if ($stmt->execute()) {
             $stmt->close();

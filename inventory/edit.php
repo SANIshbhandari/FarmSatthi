@@ -14,6 +14,9 @@ if ($id <= 0) {
     redirect('index.php');
 }
 
+// Verify record ownership
+verifyRecordOwnership($conn, 'inventory', $id, 'index.php');
+
 $stmt = $conn->prepare("SELECT * FROM inventory WHERE id = ?");
 $stmt->bind_param("i", $id);
 $stmt->execute();

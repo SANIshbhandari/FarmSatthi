@@ -14,6 +14,10 @@ $whereConditions = [];
 $params = [];
 $types = '';
 
+// Add data isolation
+$isolationWhere = getDataIsolationWhere();
+$whereConditions[] = $isolationWhere;
+
 if (!empty($search)) {
     $whereConditions[] = "(name LIKE ? OR role LIKE ? OR email LIKE ?)";
     $searchParam = "%$search%";
@@ -29,7 +33,7 @@ if (!empty($status)) {
     $types .= 's';
 }
 
-$whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
+$whereClause = 'WHERE ' . implode(' AND ', $whereConditions);
 
 $countQuery = "SELECT COUNT(*) as total FROM employees $whereClause";
 $stmt = $conn->prepare($countQuery);

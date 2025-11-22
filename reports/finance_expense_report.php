@@ -1,5 +1,8 @@
 <?php
-$whereConditions = ['1=1'];
+// Add data isolation - each user sees only their own data
+$isolationWhere = getDataIsolationWhere();
+
+$whereConditions = [$isolationWhere];
 $params = [];
 $types = '';
 
@@ -51,20 +54,55 @@ $summary = $summaryResult ? $summaryResult->fetch_assoc() : [];
 
 <?php 
 // Prepare category data for chart
-$categoryResult->data_seek(0);
 $categoryData = [];
-while ($cat = $categoryResult->fetch_assoc()) {
-    $categoryData[] = $cat;
+if ($categoryResult && $categoryResult->num_rows > 0) {
+    $categoryResult->data_seek(0);
+    while ($cat = $categoryResult->fetch_assoc()) {
+        $categoryData[] = $cat;
+    }
+    $categoryResult->data_seek(0);
 }
-$categoryResult->data_seek(0);
 ?>
 
 <?php if ($categoryResult && $categoryResult->num_rows > 0): ?>
-<!-- Expense Category Chart -->
-<div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 30px 0;">
-    <h4 style="text-align: center; margin-bottom: 20px;">Expense Distribution by Category</h4>
-    <div style="max-width: 600px; margin: 0 auto;">
-        <canvas id="expensePieChart"></canvas>
+<!-- Expense Insights -->
+<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: white; margin: 30px 0;">
+    <h4 style="margin-top: 0; color: white;">💡 Expense Insights & Recommendations</h4>
+    <?php
+    $topCategory = null;
+    $topPercentage = 0;
+    if ($categoryResult && $categoryResult->num_rows > 0) {
+        $categoryResult->data_seek(0); // Reset pointer
+        $topCategory = $categoryResult->fetch_assoc();
+        $categoryResult->data_seek(0); // Reset again for table
+        $topPercentage = ($topCategory['total'] / ($summary['total_expenses'] ?? 1)) * 100;
+    }
+    ?>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+        <?php if ($topCategory): ?>
+        <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 6px;">
+            <div style="font-size: 2em; margin-bottom: 8px;">📊</div>
+            <strong>Top Expense Category</strong>
+            <p style="margin: 5px 0 0 0; font-size: 0.9em;"><?php echo htmlspecialchars($topCategory['category']); ?> accounts for <?php echo number_format($topPercentage, 1); ?>% of total expenses.</p>
+        </div>
+        <?php if ($topPercentage > 40): ?>
+        <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 6px;">
+            <div style="font-size: 2em; margin-bottom: 8px;">⚠️</div>
+            <strong>Cost Optimization</strong>
+            <p style="margin: 5px 0 0 0; font-size: 0.9em;">Consider bulk purchasing or finding alternatives for <?php echo htmlspecialchars($topCategory['category']); ?> to reduce costs.</p>
+        </div>
+        <?php endif; ?>
+        <?php endif; ?>
+        <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 6px;">
+            <div style="font-size: 2em; margin-bottom: 8px;">💰</div>
+            <strong>Budget Planning</strong>
+            <p style="margin: 5px 0 0 0; font-size: 0.9em;">Set monthly budgets for each category to control spending and improve profitability.</p>
+        </div>
+        <div style="background: rgba(255,255,255,0.15); padding: 15px; border-radius: 6px;">
+            <div style="font-size: 2em; margin-bottom: 8px;">📈</div>
+            <strong>Track Trends</strong>
+            <p style="margin: 5px 0 0 0; font-size: 0.9em;">Compare expenses month-over-month to identify seasonal patterns and plan accordingly.</p>
+        </div>
     </div>
 </div>
 
@@ -131,109 +169,7 @@ $categoryResult->data_seek(0);
 <div class="no-results"><p>No expense data available.</p></div>
 <?php endif; ?>
 
-<!-- Chart.js Library -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-
 <script>
-// Debug: Check if Chart.js loaded
-console.log('Chart.js loaded:', typeof Chart !== 'undefined');
-
-// Prepare category data for pie chart
-const categoryData = <?php echo json_encode($categoryData); ?>;
-
-// Check if we have data
-if (!categoryData || categoryData.length === 0) {
-    console.warn('No category data available for chart');
-    const chartContainer = document.getElementById('expensePieChart');
-    if (chartContainer) {
-        chartContainer.parentElement.innerHTML = '<p style="text-align: center; padding: 40px; color: #666;">No expense data available to display chart.</p>';
-    }
-} else {
-    initializeExpenseChart();
-}
-
-function initializeExpenseChart() {
-const categories = categoryData.map(d => d.category);
-const amounts = categoryData.map(d => parseFloat(d.total));
-
-// Generate colors for categories
-const colors = [
-    'rgba(255, 99, 132, 0.8)',
-    'rgba(54, 162, 235, 0.8)',
-    'rgba(255, 206, 86, 0.8)',
-    'rgba(75, 192, 192, 0.8)',
-    'rgba(153, 102, 255, 0.8)',
-    'rgba(255, 159, 64, 0.8)',
-    'rgba(199, 199, 199, 0.8)',
-    'rgba(83, 102, 255, 0.8)',
-    'rgba(255, 99, 255, 0.8)',
-    'rgba(99, 255, 132, 0.8)'
-];
-
-// Expense Category Pie Chart
-const expensePieCanvas = document.getElementById('expensePieChart');
-if (!expensePieCanvas) {
-    console.error('Expense pie chart canvas not found!');
-    return;
-}
-const expensePieCtx = expensePieCanvas.getContext('2d');
-new Chart(expensePieCtx, {
-    type: 'doughnut',
-    data: {
-        labels: categories,
-        datasets: [{
-            data: amounts,
-            backgroundColor: colors.slice(0, categories.length),
-            borderColor: colors.slice(0, categories.length).map(c => c.replace('0.8', '1')),
-            borderWidth: 2
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-            legend: {
-                position: 'right',
-                labels: {
-                    font: { size: 12 },
-                    padding: 15,
-                    generateLabels: function(chart) {
-                        const data = chart.data;
-                        if (data.labels.length && data.datasets.length) {
-                            const total = data.datasets[0].data.reduce((a, b) => a + b, 0);
-                            return data.labels.map((label, i) => {
-                                const value = data.datasets[0].data[i];
-                                const percentage = ((value / total) * 100).toFixed(1);
-                                return {
-                                    text: label + ' (' + percentage + '%)',
-                                    fillStyle: data.datasets[0].backgroundColor[i],
-                                    hidden: false,
-                                    index: i
-                                };
-                            });
-                        }
-                        return [];
-                    }
-                }
-            },
-            tooltip: {
-                callbacks: {
-                    label: function(context) {
-                        const label = context.label || '';
-                        const value = context.parsed || 0;
-                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        const percentage = ((value / total) * 100).toFixed(1);
-                        return label + ': Rs. ' + value.toLocaleString() + ' (' + percentage + '%)';
-                    }
-                }
-            }
-        }
-    }
-});
-
-console.log('Expense chart initialized successfully!');
-} // End of initializeExpenseChart function
-
 // CSV Export Function
 function exportToCSV() {
     let csv = 'Expense Report\n\n';

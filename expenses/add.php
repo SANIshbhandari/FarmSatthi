@@ -21,11 +21,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($error = validateRequired($description, 'Description')) $errors[] = $error;
     
     if (empty($errors)) {
+        $createdBy = getCreatedByUserId();
         $stmt = $conn->prepare("
-            INSERT INTO expenses (category, amount, expense_date, description, payment_method)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO expenses (created_by, category, amount, expense_date, description, payment_method)
+            VALUES (?, ?, ?, ?, ?, ?)
         ");
-        $stmt->bind_param("sdsss", $category, $amount, $expense_date, $description, $payment_method);
+        $stmt->bind_param("isdsss", $createdBy, $category, $amount, $expense_date, $description, $payment_method);
         
         if ($stmt->execute()) {
             $stmt->close();

@@ -10,7 +10,7 @@ $conn = getDBConnection();
 $reportGen = new ReportGenerator($conn);
 
 // Get report type and filters
-$reportType = sanitizeInput($_GET['report'] ?? 'health');
+$reportType = sanitizeInput($_GET['report'] ?? 'production');
 $filterData = $_GET;
 $filter = new ReportFilter($filterData);
 
@@ -31,9 +31,6 @@ if (!$filter->isValid()) {
 
 <!-- Report Type Navigation -->
 <div class="report-nav">
-    <a href="?report=health" class="btn <?php echo $reportType === 'health' ? 'btn-primary' : 'btn-outline'; ?>">
-        Health Report
-    </a>
     <a href="?report=production" class="btn <?php echo $reportType === 'production' ? 'btn-primary' : 'btn-outline'; ?>">
         Production Report
     </a>
@@ -62,7 +59,8 @@ if (!$filter->isValid()) {
             <select name="animal_type" class="form-control">
                 <option value="">All Types</option>
                 <?php
-                $types = $conn->query("SELECT DISTINCT animal_type FROM livestock ORDER BY animal_type");
+                $isolationWhere = getDataIsolationWhere();
+                $types = $conn->query("SELECT DISTINCT animal_type FROM livestock WHERE $isolationWhere ORDER BY animal_type");
                 while ($type = $types->fetch_assoc()):
                 ?>
                 <option value="<?php echo htmlspecialchars($type['animal_type']); ?>" 
@@ -98,9 +96,6 @@ if (!$filter->isValid()) {
 <?php
 // Generate report based on type
 switch ($reportType) {
-    case 'health':
-        include __DIR__ . '/livestock_health_report.php';
-        break;
     case 'production':
         include __DIR__ . '/livestock_production_report.php';
         break;

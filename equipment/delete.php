@@ -14,7 +14,11 @@ if ($id <= 0) {
     redirect('index.php');
 }
 
-$stmt = $conn->prepare("DELETE FROM equipment WHERE id = ?");
+// Verify record ownership
+verifyRecordOwnership($conn, 'equipment', $id, 'index.php');
+
+$isolationWhere = getDataIsolationWhere();
+$stmt = $conn->prepare("DELETE FROM equipment WHERE id = ? AND $isolationWhere");
 $stmt->bind_param("i", $id);
 
 if ($stmt->execute()) {

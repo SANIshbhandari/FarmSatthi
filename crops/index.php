@@ -11,10 +11,14 @@ $status = sanitizeInput($_GET['status'] ?? '');
 $page = max(1, intval($_GET['page'] ?? 1));
 $recordsPerPage = 20;
 
-// Build query
+// Build query with data isolation
 $whereConditions = [];
 $params = [];
 $types = '';
+
+// Add data isolation - managers see only their own data
+$isolationWhere = getDataIsolationWhere();
+$whereConditions[] = $isolationWhere;
 
 if (!empty($search)) {
     $whereConditions[] = "(crop_name LIKE ? OR crop_type LIKE ? OR field_location LIKE ?)";
@@ -31,7 +35,7 @@ if (!empty($status)) {
     $types .= 's';
 }
 
-$whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
+$whereClause = 'WHERE ' . implode(' AND ', $whereConditions);
 
 // Get total count
 $countQuery = "SELECT COUNT(*) as total FROM crops $whereClause";

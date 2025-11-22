@@ -14,7 +14,11 @@ if ($id <= 0) {
     redirect('index.php');
 }
 
-$stmt = $conn->prepare("DELETE FROM expenses WHERE id = ?");
+// Verify record ownership
+verifyRecordOwnership($conn, 'expenses', $id, 'index.php');
+
+$isolationWhere = getDataIsolationWhere();
+$stmt = $conn->prepare("DELETE FROM expenses WHERE id = ? AND $isolationWhere");
 $stmt->bind_param("i", $id);
 
 if ($stmt->execute()) {

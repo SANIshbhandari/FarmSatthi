@@ -14,6 +14,9 @@ if ($id <= 0) {
     redirect('index.php');
 }
 
+// Verify record ownership before allowing edit
+verifyRecordOwnership($conn, 'crops', $id, 'index.php');
+
 // Get existing crop data
 $stmt = $conn->prepare("SELECT * FROM crops WHERE id = ?");
 $stmt->bind_param("i", $id);

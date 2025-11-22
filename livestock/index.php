@@ -12,10 +12,14 @@ $health_status = sanitizeInput($_GET['health_status'] ?? '');
 $page = max(1, intval($_GET['page'] ?? 1));
 $recordsPerPage = 20;
 
-// Build query
+// Build query with data isolation
 $whereConditions = [];
 $params = [];
 $types = '';
+
+// Add data isolation
+$isolationWhere = getDataIsolationWhere();
+$whereConditions[] = $isolationWhere;
 
 if (!empty($search)) {
     $whereConditions[] = "(animal_type LIKE ? OR breed LIKE ?)";
@@ -37,7 +41,7 @@ if (!empty($health_status)) {
     $types .= 's';
 }
 
-$whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
+$whereClause = 'WHERE ' . implode(' AND ', $whereConditions);
 
 // Get total count
 $countQuery = "SELECT COUNT(*) as total FROM livestock $whereClause";
@@ -125,6 +129,7 @@ $result = $stmt->get_result();
                 <td><?php echo formatCurrency($row['current_value']); ?></td>
                 <?php if (canModify()): ?>
                 <td class="actions">
+                    <a href="record_sale.php?livestock_id=<?php echo $row['id']; ?>" class="btn btn-sm btn-success">💰 Record Sale</a>
                     <a href="edit.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-edit">Edit</a>
                     <a href="delete.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-delete" onclick="return confirm('Are you sure you want to delete this livestock record?');">Delete</a>
                 </td>

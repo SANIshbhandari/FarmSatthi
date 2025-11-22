@@ -16,6 +16,10 @@ $whereConditions = [];
 $params = [];
 $types = '';
 
+// Add data isolation
+$isolationWhere = getDataIsolationWhere();
+$whereConditions[] = $isolationWhere;
+
 if (!empty($search)) {
     $whereConditions[] = "(category LIKE ? OR description LIKE ?)";
     $searchParam = "%$search%";
@@ -42,7 +46,7 @@ if (!empty($date_to)) {
     $types .= 's';
 }
 
-$whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
+$whereClause = 'WHERE ' . implode(' AND ', $whereConditions);
 
 $countQuery = "SELECT COUNT(*) as total FROM expenses $whereClause";
 $stmt = $conn->prepare($countQuery);

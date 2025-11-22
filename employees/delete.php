@@ -14,7 +14,11 @@ if ($id <= 0) {
     redirect('index.php');
 }
 
-$stmt = $conn->prepare("DELETE FROM employees WHERE id = ?");
+// Verify record ownership
+verifyRecordOwnership($conn, 'employees', $id, 'index.php');
+
+$isolationWhere = getDataIsolationWhere();
+$stmt = $conn->prepare("DELETE FROM employees WHERE id = ? AND $isolationWhere");
 $stmt->bind_param("i", $id);
 
 if ($stmt->execute()) {

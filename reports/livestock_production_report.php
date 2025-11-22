@@ -5,7 +5,11 @@
  */
 
 $aggregation = $filter->customFilters['aggregation'] ?? 'daily';
-$whereConditions = ['1=1'];
+
+// Add data isolation
+$isolationWhere = getDataIsolationWhere('l');
+
+$whereConditions = [$isolationWhere];
 $params = [];
 $types = '';
 

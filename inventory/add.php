@@ -22,11 +22,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($error = validatePositive($reorder_level, 'Reorder level')) $errors[] = $error;
     
     if (empty($errors)) {
+        $createdBy = getCreatedByUserId();
         $stmt = $conn->prepare("
-            INSERT INTO inventory (item_name, category, quantity, unit, reorder_level)
-            VALUES (?, ?, ?, ?, ?)
+            INSERT INTO inventory (created_by, item_name, category, quantity, unit, reorder_level)
+            VALUES (?, ?, ?, ?, ?, ?)
         ");
-        $stmt->bind_param("ssdsd", $item_name, $category, $quantity, $unit, $reorder_level);
+        $stmt->bind_param("issdsd", $createdBy, $item_name, $category, $quantity, $unit, $reorder_level);
         
         if ($stmt->execute()) {
             $stmt->close();

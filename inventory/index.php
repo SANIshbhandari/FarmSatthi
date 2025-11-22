@@ -15,6 +15,10 @@ $whereConditions = [];
 $params = [];
 $types = '';
 
+// Add data isolation
+$isolationWhere = getDataIsolationWhere();
+$whereConditions[] = $isolationWhere;
+
 if (!empty($search)) {
     $whereConditions[] = "(item_name LIKE ? OR category LIKE ?)";
     $searchParam = "%$search%";
@@ -33,7 +37,7 @@ if ($low_stock) {
     $whereConditions[] = "quantity <= reorder_level";
 }
 
-$whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
+$whereClause = 'WHERE ' . implode(' AND ', $whereConditions);
 
 $countQuery = "SELECT COUNT(*) as total FROM inventory $whereClause";
 $stmt = $conn->prepare($countQuery);

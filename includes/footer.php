@@ -3,7 +3,7 @@
 
     <footer class="main-footer">
         <div class="container">
-            <p>&copy; <?php echo date('Y'); ?> Farm Management System. All rights reserved . <br>Developed using html,css,js and for backend php and database mysql.</p>
+            <p>&copy; <?php echo date('Y'); ?> Farm Management System. All rights reserved . <br>Developed for farmer revolution</p>
         </div>
     </footer>
 

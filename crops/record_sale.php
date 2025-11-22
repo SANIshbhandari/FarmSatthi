@@ -45,25 +45,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Insert crop sale
         $stmt = $conn->prepare("INSERT INTO crop_sales (crop_id, crop_name, quantity_sold, unit, rate_per_unit, total_price, buyer_name, buyer_contact, sale_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("isdsddss", $crop_id, $crop_name, $quantity_sold, $unit, $rate_per_unit, $total_price, $buyer_name, $buyer_contact, $sale_date);
         
-        if ($stmt->execute()) {
+        if ($stmt === false) {
+            $errors[] = "Database error: " . $conn->error;
+            $errors[] = "The crop_sales table may not exist. Please run database/create_sales_tables.sql";
+        } else {
+            $stmt->bind_param("isdsddsss", $crop_id, $crop_name, $quantity_sold, $unit, $rate_per_unit, $total_price, $buyer_name, $buyer_contact, $sale_date);
+        }
+        
+        if ($stmt && $stmt->execute()) {
             $sale_id = $stmt->insert_id;
             $stmt->close();
             
             // Record income
             $stmt = $conn->prepare("INSERT INTO income (source, reference_id, amount, income_date, description) VALUES ('crop_sales', ?, ?, ?, ?)");
-            $description = "Sale of $crop_name to $buyer_name";
-            $stmt->bind_param("idss", $sale_id, $total_price, $sale_date, $description);
-            $stmt->execute();
-            $stmt->close();
+            if ($stmt) {
+                $description = "Sale of $crop_name to $buyer_name";
+                $stmt->bind_param("idss", $sale_id, $total_price, $sale_date, $description);
+                $stmt->execute();
+                $stmt->close();
+            }
             
             logActivity('create', 'crops', "Recorded sale of $crop_name");
             setFlashMessage("Crop sale recorded successfully!", 'success');
             redirect('index.php');
         } else {
-            $errors[] = "Failed to record sale.";
-            $stmt->close();
+            if ($stmt) {
+                $errors[] = "Failed to record sale: " . $stmt->error;
+                $stmt->close();
+            }
         }
     }
 }
